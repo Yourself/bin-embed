@@ -37,7 +37,7 @@ void writeStringSafeChar(std::ostream& os, char c) {
         os << "\"";
         break;
     default:
-        if (std::isprint(c)) {
+        if (std::isprint(static_cast<unsigned char>(c))) {
             os << c;
         } else {
             os << "\\x" << std::hex << std::noshowbase << std::setfill('0') << std::setw(2) << static_cast<int>(c)
@@ -56,7 +56,7 @@ void writeStringLiteral(std::ostream& os, std::string_view str) {
 
 void writeIdentifier(std::ostream& os, std::string_view str) {
     for (const auto c : str) {
-        os << (std::isalnum(c) ? c : '_');
+        os << (std::isalnum(static_cast<unsigned char>(c)) ? c : '_');
     }
 }
 
