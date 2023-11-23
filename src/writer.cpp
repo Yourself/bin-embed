@@ -147,7 +147,7 @@ void writeManager(std::ostream& os, const GeneratorArgs& args) {
        << "    };\n"
        << "  }();\n"
        << "  auto it = pathTable.find(path);\n"
-       << "  return it != pathTable.end() ? (*it)() : std::string_view{};"
+       << "  return it != pathTable.end() ? it->second() : std::string_view{};"
        << "}\n";
 }
 
