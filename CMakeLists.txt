@@ -11,7 +11,7 @@ endif()
 function(add_resources target)
     set(options PRAGMA)
     set(args NAMESPACE CHUNK HEADER)
-    cmake_parse_arguments(PARSE_ARGV 1 EMBED_RES "${options}" "${args}" "" ${ARGN})
+    cmake_parse_arguments(PARSE_ARGV 1 EMBED_RES "${options}" "${args}" "")
 
     if(NOT DEFINED EMBED_RES_HEADER)
         set(EMBED_RES_HEADER "resources.h")
