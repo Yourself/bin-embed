@@ -20,15 +20,15 @@ function(add_resources target)
     set(EXTRA_ARGS "")
 
     if(DEFINED EMBED_RES_PRAGMA)
-        set(EXTRA_ARGS "${EXTRA_ARGS} --pragma-once")
+        set(EXTRA_ARGS ${EXTRA_ARGS} --pragma-once)
     endif()
 
     if(DEFINED EMBED_RES_NAMESPACE)
-        set(EXTRA_ARGS "${EXTRA_ARGS} --namespace ${EMBED_RES_NAMESPACE}")
+        set(EXTRA_ARGS ${EXTRA_ARGS} --namespace ${EMBED_RES_NAMESPACE})
     endif()
 
     if(DEFINED EMBED_RES_CHUNK)
-        set(EXTRA_ARGS "${EXTRA_ARGS} --chunk-size ${EMBED_RES_CHUNK}")
+        set(EXTRA_ARGS ${EXTRA_ARGS} --chunk-size ${EMBED_RES_CHUNK})
     endif()
 
     set(EMBED_GENERATED_DIR ${CMAKE_BINARY_DIR}/generated)
