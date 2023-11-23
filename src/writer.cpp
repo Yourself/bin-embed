@@ -135,8 +135,8 @@ void writeManager(std::ostream& os, const GeneratorArgs& args) {
     for (const auto& file : args.sources) {
         if (!first) {
             os << ",\n";
-            first = false;
         }
+        first = false;
         os << "      {";
         writeStringLiteral(os, file);
         os << ", &resources_detail::get_";
