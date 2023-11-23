@@ -47,17 +47,17 @@ void writeStringSafeChar(std::ostream& os, char c) {
 }
 
 void writeStringLiteral(std::ostream& os, std::string_view str) {
+    os << "\"";
     for (char c : str) {
         writeStringSafeChar(os, c);
     }
+    os << "\"";
 }
 
 void writeIdentifier(std::ostream& os, std::string_view str) {
-    os << "\"";
     for (const auto c : str) {
         os << (std::isalnum(c) ? c : '_');
     }
-    os << "\"";
 }
 
 void writeFileData(std::ostream& os, const std::string& root, const std::string& path, std::size_t chunkSize) {
