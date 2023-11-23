@@ -14,7 +14,7 @@ function(add_resources target)
     cmake_parse_arguments(PARSE_ARGV 1 EMBED_RES "${options}" "${args}" "")
 
     if(NOT DEFINED EMBED_RES_HEADER)
-        set(EMBED_RES_HEADER "resources.h")
+        set(EMBED_RES_HEADER "${target}.h")
     endif()
 
     set(EXTRA_ARGS "")
