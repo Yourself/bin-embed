@@ -17,33 +17,31 @@ function(add_resources target)
         set(EMBED_RES_HEADER "${target}.h")
     endif()
 
-    set(EXTRA_ARGS "")
-
-    if(DEFINED EMBED_RES_PRAGMA)
-        set(EXTRA_ARGS ${EXTRA_ARGS} --pragma-once)
-    endif()
-
-    if(DEFINED EMBED_RES_NAMESPACE)
-        set(EXTRA_ARGS ${EXTRA_ARGS} --namespace ${EMBED_RES_NAMESPACE})
-    endif()
-
-    if(DEFINED EMBED_RES_CHUNK)
-        set(EXTRA_ARGS ${EXTRA_ARGS} --chunk-size ${EMBED_RES_CHUNK})
-    endif()
-
     set(EMBED_GENERATED_DIR ${CMAKE_BINARY_DIR}/embed_${target}/generated)
     set(EMBED_GENERATED_HEADER ${EMBED_GENERATED_DIR}/${EMBED_RES_HEADER})
     set(EMBED_RESOURCE_FILES ${EMBED_RES_UNPARSED_ARGUMENTS})
     list(TRANSFORM EMBED_RESOURCE_FILES PREPEND ${CMAKE_CURRENT_SOURCE_DIR}/ OUTPUT_VARIABLE EMBED_RESOURCE_FILES_ABS)
     file(RELATIVE_PATH EMBED_GENERATED_HEADER_REL ${CMAKE_BINARY_DIR} ${EMBED_GENERATED_HEADER})
-    string(REPLACE ";" " " FILE_ARGS "${EMBED_RESOURCE_FILES}")
+
+    set(EMBED_ARGS -r ${CMAKE_CURRENT_SOURCE_DIR} -o ${EMBED_GENERATED_HEADER})
+
+    if(DEFINED EMBED_RES_PRAGMA)
+        list(APPEND EMBED_ARGS --pragma-once)
+    endif()
+
+    if(DEFINED EMBED_RES_NAMESPACE)
+        list(APPEND EMBED_ARGS --namespace ${EMBED_RES_NAMESPACE})
+    endif()
+
+    if(DEFINED EMBED_RES_CHUNK)
+        list(APPEND EMBED_ARGS --chunk-size ${EMBED_RES_CHUNK})
+    endif()
+
+    list(APPEND EMBED_ARGS EMBED_RESOURCE_FILES)
+
     add_custom_command(OUTPUT "${EMBED_GENERATED_HEADER}"
         COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBED_GENERATED_DIR}
-        COMMAND bin-embed
-        -r ${CMAKE_CURRENT_SOURCE_DIR}
-        -o ${EMBED_GENERATED_HEADER}
-        ${EXTRA_ARGS}
-        ${FILE_ARGS}
+        COMMAND bin-embed ${EMBED_ARGS}
         DEPENDS bin-embed ${EMBED_RESOURCE_FILES_ABS}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMENT "Generating ${EMBED_GENERATED_HEADER_REL}")
