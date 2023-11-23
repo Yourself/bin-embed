@@ -49,4 +49,4 @@ function(add_resources target)
     add_custom_target(target ALL DEPENDS "${EMBED_GENERATED_HEADER}")
 endfunction()
 
-add_executable(bin-embed src/main.cpp src/args.cpp)
+add_executable(bin-embed src/main.cpp src/args.cpp src/writer.cpp)
