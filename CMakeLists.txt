@@ -44,7 +44,7 @@ function(add_resources target)
         ${EXTRA_ARGS}
         ${EMBED_RESOURCE_FILES}
         DEPENDS bin-embed ${EMBED_RESOURCE_FILES_ABS}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMENT "Generating ${EMBED_GENERATED_HEADER_REL}")
 
     add_custom_target(${target} ALL DEPENDS "${EMBED_GENERATED_HEADER}")
