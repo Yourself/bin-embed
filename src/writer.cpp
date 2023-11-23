@@ -131,14 +131,20 @@ void writeManager(std::ostream& os, const GeneratorArgs& args) {
        << "  using Fn = std::string_view (*)();\n"
        << "  static auto pathTable = []() {\n"
        << "    return std::map<std::string, Fn, std::less<>>{\n";
+    bool first = true;
     for (const auto& file : args.sources) {
+        if (!first) {
+            os << ",\n";
+            first = false;
+        }
         os << "      {";
         writeStringLiteral(os, file);
         os << ", &resources_detail::get_";
         writeIdentifier(os, file);
-        os << "}\n";
+        os << "}";
     }
-    os << "    };\n"
+    os << "\n"
+       << "    };\n"
        << "  }();\n"
        << "  auto it = pathTable.find(path);\n"
        << "  return it != pathTable.end() ? (*it)() : std::string_view{};"
