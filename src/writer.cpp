@@ -65,7 +65,8 @@ void writeFileData(std::ostream& os, const std::string& root, const std::string&
     source /= path;
     auto size = fs::file_size(source);
     std::ifstream fd(source.c_str(), std::ios::binary);
-    if (chunkSize == 0) {
+    bool useSimple = chunkSize == 0 || size <= chunkSize;
+    if (useSimple) {
         os << "const char ";
         writeIdentifier(os, path);
         os << "[] = \"";
@@ -84,7 +85,7 @@ void writeFileData(std::ostream& os, const std::string& root, const std::string&
     writeIdentifier(os, path);
     os << "() {";
 
-    if (chunkSize == 0) {
+    if (useSimple) {
         os << " return ";
         writeIdentifier(os, path);
         os << ";";
@@ -109,6 +110,7 @@ void writeFileData(std::ostream& os, const std::string& root, const std::string&
             }
         }
         os << "\");\n"
+           << "    return s;\n"
            << "  }();\n"
            << "  return ret;\n";
     }
@@ -132,7 +134,7 @@ void writeManager(std::ostream& os, const GeneratorArgs& args) {
     for (const auto& file : args.sources) {
         os << "      {";
         writeStringLiteral(os, file);
-        os << ", get_";
+        os << ", &get_";
         writeIdentifier(os, file);
         os << "}\n";
     }
