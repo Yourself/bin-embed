@@ -37,7 +37,7 @@ function(add_resources target)
         list(APPEND EMBED_ARGS --chunk-size ${EMBED_RES_CHUNK})
     endif()
 
-    list(APPEND EMBED_ARGS EMBED_RESOURCE_FILES)
+    list(APPEND EMBED_ARGS ${EMBED_RESOURCE_FILES})
 
     add_custom_command(OUTPUT "${EMBED_GENERATED_HEADER}"
         COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBED_GENERATED_DIR}

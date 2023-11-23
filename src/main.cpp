@@ -6,7 +6,6 @@
 #include <iostream>
 
 int main(int argc, const char** argv) {
-    std::cout << std::endl;
     auto result = parse(argc, argv);
     if (is_error(result)) {
         const auto& msg = std::get<Error>(result).msg;
