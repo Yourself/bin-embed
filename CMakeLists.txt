@@ -47,7 +47,11 @@ function(add_resources target)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMENT "Generating ${EMBED_GENERATED_HEADER_REL}")
 
-    add_custom_target(${target} ALL DEPENDS "${EMBED_GENERATED_HEADER}")
+    add_custom_target(EMBED_${target} DEPENDS "${EMBED_GENERATED_HEADER}")
+
+    add_library(${target} INTERFACE)
+    target_include_directories(${target} INTERFACE ${EMBED_GENERATED_DIR})
+    add_dependencies(${target} EMBED_${target})
 endfunction()
 
 add_executable(bin-embed src/main.cpp src/args.cpp src/writer.cpp)
