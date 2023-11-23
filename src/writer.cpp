@@ -40,7 +40,7 @@ void writeStringSafeChar(std::ostream& os, char c) {
         if (std::isprint(static_cast<unsigned char>(c))) {
             os << c;
         } else {
-            os << "\\x" << std::hex << std::noshowbase << std::setfill('0') << std::setw(2) << static_cast<int>(c)
+            os << "\\x" << std::hex << std::noshowbase << std::setfill('0') << std::setw(2) << static_cast<unsigned int>(c)
                << "\" \"";
         }
     }
