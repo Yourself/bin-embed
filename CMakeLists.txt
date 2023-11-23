@@ -41,6 +41,7 @@ function(add_resources target)
         COMMAND bin-embed
         -r ${CMAKE_CURRENT_SOURCE_DIR}
         -o ${EMBED_GENERATED_HEADER}
+        ${EXTRA_ARGS}
         ${EMBED_RESOURCE_FILES}
         DEPENDS bin-embed ${EMBED_RESOURCE_FILES_ABS}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
