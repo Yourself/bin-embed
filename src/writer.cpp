@@ -55,8 +55,8 @@ void writeStringSafeChar(std::ostream& os, unsigned char c) {
         if (std::isprint(c)) {
             os << c;
         } else {
-            os << "\\x" << std::hex << std::noshowbase << std::setfill('0') << std::setw(2)
-               << static_cast<int>(c) << "\" \"";
+            os << "\\x" << std::hex << std::noshowbase << std::setfill('0') << std::setw(2) << static_cast<int>(c)
+               << "\" \"";
         }
     }
 }
@@ -119,12 +119,12 @@ void writeFileData(std::ostream& os, const std::string& root, const std::string&
             }
             writeStringSafeChar(os, c);
             if (++count == chunkSize) {
-                os << "\");\n"
+                os << "\", " << chunkSize << ");\n"
                    << "    s.append(\"";
                 count = 0;
             }
         }
-        os << "\");\n"
+        os << "\", " << count << ");\n"
            << "    return s;\n"
            << "  }();\n"
            << "  return ret;\n";
