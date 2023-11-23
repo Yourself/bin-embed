@@ -3,41 +3,42 @@
 #include <format>
 #include <iostream>
 #include <map>
-#include <optional>
 #include <regex>
+#include <variant>
 
 namespace {
-using ParseFn = std::optional<Error> (*)(const char*, GeneratorArgs&);
+using ParseResult = std::variant<bool, Error>;
+using ParseFn = ParseResult (*)(const char*, GeneratorArgs&);
 
-std::optional<Error> parseRoot(const char* arg, GeneratorArgs& args) {
+ParseResult parseRoot(const char* arg, GeneratorArgs& args) {
     if (!arg) {
         return Error{.msg = "Expected argument to root option."};
     }
     args.root = arg;
-    return std::nullopt;
+    return true;
 }
 
-std::optional<Error> parseOutput(const char* arg, GeneratorArgs& args) {
+ParseResult parseOutput(const char* arg, GeneratorArgs& args) {
     if (!arg) {
         return Error{.msg = "Expected argument to output option."};
     }
     args.output = arg;
-    return std::nullopt;
+    return true;
 }
 
-std::optional<Error> parseNSpace(const char* arg, GeneratorArgs& args) {
+ParseResult parseNSpace(const char* arg, GeneratorArgs& args) {
     if (!arg) {
         return Error{.msg = "Expected argument to namespace option."};
     }
     args.nspace = arg;
-    return std::nullopt;
+    return true;
 }
 
 const std::regex numberRegex(R"(\s*(0x)?\d+\s*)",
                              std::regex_constants::ECMAScript | std::regex_constants::nosubs |
                                  std::regex_constants::optimize);
 
-std::optional<Error> parseChunkSize(const char* arg, GeneratorArgs& args) {
+ParseResult parseChunkSize(const char* arg, GeneratorArgs& args) {
     if (!arg) {
         return Error{.msg = "Expected argument to chunk size option."};
     }
@@ -45,7 +46,7 @@ std::optional<Error> parseChunkSize(const char* arg, GeneratorArgs& args) {
         return Error{.msg = std::format("Invalid chunk size '{}'", arg)};
     }
     args.chunk = static_cast<size_t>(std::atoll(arg));
-    return std::nullopt;
+    return true;
 }
 
 const std::regex trueRegex(R"(\s*(true|yes|1)\s*)",
@@ -55,27 +56,24 @@ const std::regex falseRegex(R"(\s*(false|no|0)\s*)",
                             std::regex_constants::ECMAScript | std::regex_constants::nosubs |
                                 std::regex_constants::optimize | std::regex_constants::icase);
 
-std::optional<Error> parseUsePragma(const char* arg, GeneratorArgs& args) {
+ParseResult parseUsePragma(const char* arg, GeneratorArgs& args) {
     if (arg) {
         if (std::regex_match(arg, trueRegex)) {
             args.usePragma = true;
         } else if (std::regex_match(arg, falseRegex)) {
             args.usePragma = false;
+        } else {
+            return false;
         }
     } else {
         args.usePragma = true;
     }
-    return std::nullopt;
+    return true;
 }
 
-std::optional<Error> parsePositional(const char* arg, GeneratorArgs& args) {
+void parsePositional(const char* arg, GeneratorArgs& args) {
     args.sources.emplace_back(arg);
-    return std::nullopt;
 }
-
-struct StateTransition {
-    ParseFn parse;
-};
 
 const std::map<std::string, ParseFn> optParsers{{"-r", parseRoot},
                                                 {"--root", parseRoot},
@@ -134,13 +132,23 @@ ErrorOr<GeneratorArgs> parse(int argc, const char** argv) {
     ParseFn next = nullptr;
     for (int i = 1; i < argc; ++i) {
         if (next) {
-            if (auto result = next(argv[i], args)) {
-                return std::move(*result);
+            auto result = next(argv[i], args);
+            if (std::holds_alternative<Error>(result)) {
+                return std::move(std::get<Error>(result));
+            }
+            if (!std::get<bool>(result)) {
+                --i;
             }
             next = nullptr;
         } else if (argv[i][0] == '-') {
             if (next) {
-                next(nullptr, args);
+                auto result = next(nullptr, args);
+                if (std::holds_alternative<Error>(result)) {
+                    return std::move(std::get<Error>(result));
+                }
+                if (!std::get<bool>(result)) {
+                    --i;
+                }
             }
             auto it = optParsers.find(argv[i]);
             if (it == optParsers.end()) {
@@ -148,9 +156,7 @@ ErrorOr<GeneratorArgs> parse(int argc, const char** argv) {
             }
             next = it->second;
         } else {
-            if (auto result = parsePositional(argv[i], args)) {
-                return std::move(*result);
-            }
+            parsePositional(argv[i], args);
         }
     }
 
