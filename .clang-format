@@ -1,0 +1,9 @@
+BasedOnStyle: Chromium
+UseTab: Never
+IndentWidth: 4
+TabWidth: 4
+FixNamespaceComments: true
+ColumnLimit: 120
+IndentRequires: true
+AccessModifierOffset: -2
+IndentCaseLabels: false
