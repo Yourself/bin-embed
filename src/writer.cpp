@@ -99,7 +99,7 @@ void writeFileData(std::ostream& os, const std::string& root, const std::string&
         while (true) {
             char c;
             fd.get(c);
-            if (!fd.eof()) {
+            if (fd.eof()) {
                 break;
             }
             writeStringSafeChar(os, c);
