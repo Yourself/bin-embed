@@ -46,7 +46,7 @@ function(add_resources target)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMENT "Generating ${EMBED_GENERATED_HEADER_REL}")
 
-    add_custom_target(target ALL DEPENDS "${EMBED_GENERATED_HEADER}")
+    add_custom_target(${target} ALL DEPENDS "${EMBED_GENERATED_HEADER}")
 endfunction()
 
 add_executable(bin-embed src/main.cpp src/args.cpp src/writer.cpp)
