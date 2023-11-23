@@ -132,7 +132,7 @@ ErrorOr<GeneratorArgs> parse(int argc, const char** argv) {
     }
 
     ParseFn next = nullptr;
-    for (int i = 1; i < argc; ++i) {
+    for (int i = 1; i <= argc; ++i) {
         if (next) {
             if (auto result = next(argv[i], args)) {
                 return std::move(*result);
