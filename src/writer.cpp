@@ -36,6 +36,21 @@ void writeStringSafeChar(std::ostream& os, char c) {
     case '"':
         os << "\"";
         break;
+    case '\n':
+        os << "\\n";
+        break;
+    case '\f':
+        os << "\\f";
+        break;
+    case '\r':
+        os << "\\r";
+        break;
+    case '\t':
+        os << "\\t";
+        break;
+    case '\b':
+        os << "\\b";
+        break;
     default:
         if (std::isprint(static_cast<unsigned char>(c))) {
             os << c;
