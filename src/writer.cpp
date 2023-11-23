@@ -120,7 +120,7 @@ void writeFileData(std::ostream& os, const std::string& root, const std::string&
             writeStringSafeChar(os, c);
             if (++count == chunkSize) {
                 os << "\");\n"
-                   << "    ret.append(\"";
+                   << "    s.append(\"";
                 count = 0;
             }
         }
