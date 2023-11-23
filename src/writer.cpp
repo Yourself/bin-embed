@@ -28,7 +28,7 @@ void writePostamble(std::ostream& os, const GeneratorArgs& args) {
     }
 }
 
-void writeStringSafeChar(std::ostream& os, char c) {
+void writeStringSafeChar(std::ostream& os, unsigned char c) {
     switch (c) {
     case '\\':
         os << "\\\\";
@@ -52,11 +52,11 @@ void writeStringSafeChar(std::ostream& os, char c) {
         os << "\\b";
         break;
     default:
-        if (std::isprint(static_cast<unsigned char>(c))) {
+        if (std::isprint(c)) {
             os << c;
         } else {
             os << "\\x" << std::hex << std::noshowbase << std::setfill('0') << std::setw(2)
-               << static_cast<int>(static_cast<unsigned char>(c)) << "\" \"";
+               << static_cast<int>(c) << "\" \"";
         }
     }
 }
