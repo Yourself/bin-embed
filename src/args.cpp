@@ -61,8 +61,6 @@ std::optional<Error> parseUsePragma(const char* arg, GeneratorArgs& args) {
             args.usePragma = true;
         } else if (std::regex_match(arg, falseRegex)) {
             args.usePragma = false;
-        } else {
-            return Error{.msg = std::format("Invalid boolean term: '{}'", arg)};
         }
     } else {
         args.usePragma = true;
