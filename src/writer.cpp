@@ -34,7 +34,7 @@ void writeStringSafeChar(std::ostream& os, unsigned char c) {
         os << "\\\\";
         break;
     case '"':
-        os << "\"";
+        os << "\\\"";
         break;
     case '\n':
         os << "\\n";
