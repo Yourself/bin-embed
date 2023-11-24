@@ -60,7 +60,7 @@ function(add_resources target)
         add_library(${target} INTERFACE)
         target_include_directories(${target} INTERFACE ${EMBED_GENERATED_DIR})
     else()
-        add_library(${target} ${EMBED_IMPL_FILES})
+        add_library(${target} STATIC ${EMBED_IMPL_FILES})
         target_include_directories(${target} PUBLIC ${EMBED_GENERATED_DIR})
     endif()
 
