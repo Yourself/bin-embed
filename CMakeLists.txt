@@ -9,7 +9,7 @@ else()
 endif()
 
 function(add_resources target)
-    set(options PRAGMA)
+    set(options PRAGMA HEADER_ONLY)
     set(args NAMESPACE CHUNK HEADER)
     cmake_parse_arguments(PARSE_ARGV 1 EMBED_RES "${options}" "${args}" "")
 
@@ -24,6 +24,14 @@ function(add_resources target)
     file(RELATIVE_PATH EMBED_GENERATED_HEADER_REL ${CMAKE_BINARY_DIR} ${EMBED_GENERATED_HEADER})
 
     set(EMBED_ARGS -r ${CMAKE_CURRENT_SOURCE_DIR} -o ${EMBED_GENERATED_HEADER})
+    set(EMBED_IMPL_FILES "")
+
+    if(DEFINED EMBED_RES_HEADER_ONLY)
+        list(APPEND EMBED_ARGS --header-only)
+    else()
+        list(TRANSFORM EMBED_RESOURCE_FILES PREPEND ${EMBED_GENERATED_DIR}/ OUTPUT_VARIABLE EMBED_IMPL_FILES)
+        list(TRANSFORM EMBED_IMPL_FILES APPEND ".cpp")
+    endif()
 
     if(DEFINED EMBED_RES_PRAGMA)
         list(APPEND EMBED_ARGS --pragma-once)
@@ -48,8 +56,13 @@ function(add_resources target)
 
     add_custom_target(EMBED_${target} DEPENDS "${EMBED_GENERATED_HEADER}")
 
-    add_library(${target} INTERFACE)
-    target_include_directories(${target} INTERFACE ${EMBED_GENERATED_DIR})
+    if(DEFINED EMBED_RES_HEADER_ONLY)
+        add_library(${target} INTERFACE)
+    else()
+        add_library(${target} ${EMBED_IMPL_FILES})
+    endif()
+
+    target_include_directories(${target} PUBLIC ${EMBED_GENERATED_DIR})
     add_dependencies(${target} EMBED_${target})
 endfunction()
 

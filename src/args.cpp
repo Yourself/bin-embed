@@ -56,32 +56,38 @@ const std::regex falseRegex(R"(\s*(false|no|0)\s*)",
                             std::regex_constants::ECMAScript | std::regex_constants::nosubs |
                                 std::regex_constants::optimize | std::regex_constants::icase);
 
-ParseResult parseUsePragma(const char* arg, GeneratorArgs& args) {
-    if (arg) {
-        if (std::regex_match(arg, trueRegex)) {
-            args.usePragma = true;
-        } else if (std::regex_match(arg, falseRegex)) {
-            args.usePragma = false;
+template <class T>
+using GeneratorField = T GeneratorArgs::*;
+
+template <GeneratorField<bool> M>
+ParseFn makeBooleanFlagParser() {
+    return [](const char* arg, GeneratorArgs& args) {
+        if (arg) {
+            if (std::regex_match(arg, trueRegex)) {
+                args.*M = true;
+            } else if (std::regex_match(arg, falseRegex)) {
+                args.*M = false;
+            } else {
+                return false;
+            }
         } else {
-            return false;
+            args.*M = true;
         }
-    } else {
-        args.usePragma = true;
-    }
-    return true;
+        return true;
+    };
 }
+
+const auto parseUsePragma = makeBooleanFlagParser<&GeneratorArgs::usePragma>();
+const auto parseHeaderOnly = makeBooleanFlagParser<&GeneratorArgs::headerOnly>();
 
 void parsePositional(const char* arg, GeneratorArgs& args) {
     args.sources.emplace_back(arg);
 }
 
-const std::map<std::string, ParseFn> optParsers{{"-r", parseRoot},
-                                                {"--root", parseRoot},
-                                                {"-o", parseOutput},
-                                                {"--output", parseOutput},
-                                                {"-n", parseNSpace},
-                                                {"--namespace", parseNSpace},
-                                                {"--pragma-once", parseUsePragma}};
+const std::map<std::string, ParseFn> optParsers{
+    {"-r", parseRoot},         {"--root", parseRoot},        {"-o", parseOutput},
+    {"--output", parseOutput}, {"-h", parseHeaderOnly},      {"--header-only", parseHeaderOnly},
+    {"-n", parseNSpace},       {"--namespace", parseNSpace}, {"--pragma-once", parseUsePragma}};
 
 std::string_view trimExeName(std::string_view exeName) {
     auto sepOffset = exeName.find_last_of("\\/");
@@ -96,6 +102,7 @@ void printUsage(std::ostream& os, std::string_view exeName) {
     os << "Usage: " << trimExeName(exeName) << " [--help]"
        << " [--pragma-once]"
        << " [--namespace <NAMESPACE>]"
+       << " [--cpp <SOURCE> --header <HEADER>]"
        << " --root <ROOT>"
        << " --output <OUTPUT>"
        << " <SOURCES>"
@@ -107,6 +114,10 @@ void printUsage(std::ostream& os, std::string_view exeName) {
        << "  -h, --help       shows help message and exits\n"
        << "  --pragma-once    use #pragma once instead of traditional header guard\n"
        << "  -n, --namespace  use the specified namespace for the generated API\n"
+       << "  -c, --cpp        emit implementation file for specified source file, must be\n"
+       << "                  used with --header option\n"
+       << "  -h, --header     name of generated header file, ignored if cpp option not\n"
+       << "                  present\n"
        << "\n";
 
     os << "Required arguments:\n"

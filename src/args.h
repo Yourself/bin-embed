@@ -24,6 +24,7 @@ struct GeneratorArgs {
     std::vector<std::string> sources;
     std::size_t chunk = 8 << 10;
     bool usePragma = false;
+    bool headerOnly = false;
 };
 
 void printUsage(std::ostream & os, std::string_view exeName);

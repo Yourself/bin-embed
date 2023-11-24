@@ -1,5 +1,6 @@
 #include "writer.h"
 
+#include <execution>
 #include <filesystem>
 #include <fstream>
 
@@ -7,6 +8,20 @@ namespace {
 
 namespace fs = std::filesystem;
 const char IncludeGuardName[] = "GENERATED_BIN_EMBED_RESOURCES_H_";
+
+struct FileReader {
+  public:
+    using iterator = std::istreambuf_iterator<char>;
+
+    template <class... Args>
+    FileReader(Args&&... args) : fd_(std::forward<Args>(args)...) {}
+
+    iterator begin() { return {fd_.rdbuf()}; }
+    iterator end() { return {}; }
+
+  private:
+    std::ifstream fd_;
+};
 
 void writePreamble(std::ostream& os, const GeneratorArgs& args) {
     if (args.usePragma) {
@@ -17,8 +32,7 @@ void writePreamble(std::ostream& os, const GeneratorArgs& args) {
     os << '\n'
        << "#include <cstdint>\n"
        << "#include <map>\n"
-       << "#include <string>\n"
-       << "#include <string_view>\n"
+       << (args.headerOnly ? "#include <string>\n" : "") << "#include <string_view>\n"
        << '\n';
 }
 
@@ -69,41 +83,42 @@ void writeStringLiteral(std::ostream& os, std::string_view str) {
     os << "\"";
 }
 
-void writeIdentifier(std::ostream& os, std::string_view str) {
+std::ostream& writeIdentifier(std::ostream& os, std::string_view str) {
     for (const auto c : str) {
         os << (std::isalnum(static_cast<unsigned char>(c)) ? c : '_');
     }
+    return os;
+}
+
+std::ostream& writeGetFunction(std::ostream& os, const std::string& path) {
+    os << "std::string_view get_";
+    writeIdentifier(os, path);
+    os << "()";
+    return os;
 }
 
 void writeFileData(std::ostream& os, const std::string& root, const std::string& path, std::size_t chunkSize) {
     fs::path source(root);
     source /= path;
     auto size = fs::file_size(source);
-    std::ifstream fd(source.c_str(), std::ios::binary);
+    FileReader reader(source, std::ios::binary);
     bool useSimple = chunkSize == 0 || size <= chunkSize;
     if (useSimple) {
         os << "const char ";
         writeIdentifier(os, path);
         os << "[] = \"";
-        while (true) {
-            char c;
-            fd.get(c);
-            if (fd.eof()) {
-                break;
-            }
+        for (char c : reader) {
             writeStringSafeChar(os, c);
         }
         os << "\";\n";
     }
 
-    os << "std::string_view get_";
-    writeIdentifier(os, path);
-    os << "() {";
+    os << "inline ";
+    writeGetFunction(os, path) << '{';
 
     if (useSimple) {
         os << " return ";
-        writeIdentifier(os, path);
-        os << ";";
+        writeIdentifier(os, path) << ';';
     } else {
         os << "\n"
            << "  static auto ret = []() {\n"
@@ -111,12 +126,7 @@ void writeFileData(std::ostream& os, const std::string& root, const std::string&
            << "    s.reserve(" << std::dec << size << ");\n"
            << "    s.append(\"";
         std::size_t count = 0;
-        while (true) {
-            char c;
-            fd.get(c);
-            if (fd.eof()) {
-                break;
-            }
+        for (char c : reader) {
             writeStringSafeChar(os, c);
             if (++count == chunkSize) {
                 os << "\", " << std::dec << chunkSize << ");\n"
@@ -135,14 +145,20 @@ void writeFileData(std::ostream& os, const std::string& root, const std::string&
 
 void writeDataSection(std::ostream& os, const GeneratorArgs& args) {
     os << "namespace resources_detail {\n";
-    for (const auto& file : args.sources) {
-        writeFileData(os, args.root, file, args.chunk);
+    if (args.headerOnly) {
+        for (const auto& file : args.sources) {
+            writeFileData(os, args.root, file, args.chunk);
+        }
+    } else {
+        for (const auto& file : args.sources) {
+            writeGetFunction(os, file) << ";\n";
+        }
     }
     os << "}\n";
 }
 
 void writeManager(std::ostream& os, const GeneratorArgs& args) {
-    os << "std::string_view find_resource(std::string_view path) {\n"
+    os << "inline std::string_view find_resource(std::string_view path) {\n"
        << "  using Fn = std::string_view (*)();\n"
        << "  static auto pathTable = []() {\n"
        << "    return std::map<std::string, Fn, std::less<>>{\n";
@@ -166,6 +182,24 @@ void writeManager(std::ostream& os, const GeneratorArgs& args) {
        << "}\n";
 }
 
+void writeImpls(std::string_view header, const fs::path& projectRoot, const GeneratorArgs& args) {
+    std::for_each(std::execution::par_unseq, args.sources.begin(), args.sources.end(), [&](const std::string& file) {
+        fs::path outPath = projectRoot / (file + ".cpp");
+        fs::create_directories(outPath);
+        std::ofstream out(outPath);
+
+        out << "#include \"" << header << "\"\n\n"
+            << "#include <string>\n\n"
+            << "namespace ";
+        if (!args.nspace.empty()) {
+            out << args.nspace << "::";
+        }
+        out << "resources_detail {\n";
+        writeFileData(out, args.root, file, args.chunk);
+        out << "}\n";
+    });
+}
+
 }  // namespace
 
 void writeHeader(std::ostream& os, const GeneratorArgs& args) {
@@ -173,4 +207,12 @@ void writeHeader(std::ostream& os, const GeneratorArgs& args) {
     writeDataSection(os, args);
     writeManager(os, args);
     writePostamble(os, args);
+
+    if (!args.headerOnly) {
+        fs::path headerPath(args.output);
+        std::string header = headerPath.filename().string();
+        fs::path projectRoot = headerPath.parent_path();
+
+        writeImpls(header, projectRoot, args);
+    }
 }
