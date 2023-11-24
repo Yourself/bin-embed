@@ -67,6 +67,7 @@ ParseResult parseBooleanFlag(const char* arg, GeneratorArgs& args) {
         } else if (std::regex_match(arg, falseRegex)) {
             args.*M = false;
         } else {
+            args.*M = true;
             return false;
         }
     } else {
