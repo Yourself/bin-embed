@@ -58,11 +58,12 @@ function(add_resources target)
 
     if(DEFINED EMBED_RES_HEADER_ONLY)
         add_library(${target} INTERFACE)
+        target_include_directories(${target} INTERFACE ${EMBED_GENERATED_DIR})
     else()
         add_library(${target} ${EMBED_IMPL_FILES})
+        target_include_directories(${target} PUBLIC ${EMBED_GENERATED_DIR})
     endif()
 
-    target_include_directories(${target} PUBLIC ${EMBED_GENERATED_DIR})
     add_dependencies(${target} EMBED_${target})
 endfunction()
 
