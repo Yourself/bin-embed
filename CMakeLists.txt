@@ -26,14 +26,16 @@ function(add_resources target)
     set(EMBED_ARGS -r ${CMAKE_CURRENT_SOURCE_DIR} -o ${EMBED_GENERATED_HEADER})
     set(EMBED_IMPL_FILES "")
 
-    if(DEFINED EMBED_RES_HEADER_ONLY)
+    if(${EMBED_RES_HEADER_ONLY})
         list(APPEND EMBED_ARGS --header-only)
     else()
         list(TRANSFORM EMBED_RESOURCE_FILES PREPEND ${EMBED_GENERATED_DIR}/ OUTPUT_VARIABLE EMBED_IMPL_FILES)
+        string(REGEX REPLACE "\.h$" ".cpp" EMBED_GENERATED_CPP ${EMBED_GENERATED_HEADER})
         list(TRANSFORM EMBED_IMPL_FILES APPEND ".cpp")
+        list(APPEND EMBED_IMPL_FILES ${EMBED_GENERATED_CPP})
     endif()
 
-    if(DEFINED EMBED_RES_PRAGMA)
+    if(${EMBED_RES_PRAGMA})
         list(APPEND EMBED_ARGS --pragma-once)
     endif()
 
@@ -47,7 +49,7 @@ function(add_resources target)
 
     list(APPEND EMBED_ARGS ${EMBED_RESOURCE_FILES})
 
-    add_custom_command(OUTPUT "${EMBED_GENERATED_HEADER}"
+    add_custom_command(OUTPUT ${EMBED_GENERATED_HEADER} ${EMBED_IMPL_FILES}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBED_GENERATED_DIR}
         COMMAND bin-embed ${EMBED_ARGS}
         DEPENDS bin-embed ${EMBED_RESOURCE_FILES_ABS}
@@ -56,7 +58,7 @@ function(add_resources target)
 
     add_custom_target(EMBED_${target} DEPENDS "${EMBED_GENERATED_HEADER}")
 
-    if(DEFINED EMBED_RES_HEADER_ONLY)
+    if(${EMBED_RES_HEADER_ONLY})
         add_library(${target} INTERFACE)
         target_include_directories(${target} INTERFACE ${EMBED_GENERATED_DIR})
     else()

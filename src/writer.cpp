@@ -97,11 +97,12 @@ std::ostream& writeGetFunction(std::ostream& os, const std::string& path) {
     return os;
 }
 
-void writeFileData(std::ostream& os, const std::string& root, const std::string& path, std::size_t chunkSize) {
+void writeFileData(std::ostream& os, const std::string& root, const std::string& path, const GeneratorArgs& args) {
     fs::path source(root);
     source /= path;
     auto size = fs::file_size(source);
     FileReader reader(source, std::ios::binary);
+    const auto chunkSize = args.chunk;
     bool useSimple = chunkSize == 0 || size <= chunkSize;
     if (useSimple) {
         os << "const char ";
@@ -113,7 +114,9 @@ void writeFileData(std::ostream& os, const std::string& root, const std::string&
         os << "\";\n";
     }
 
-    os << "inline ";
+    if (args.headerOnly) {
+        os << "inline ";
+    }
     writeGetFunction(os, path) << '{';
 
     if (useSimple) {
@@ -147,7 +150,7 @@ void writeDataSection(std::ostream& os, const GeneratorArgs& args) {
     os << "namespace resources_detail {\n";
     if (args.headerOnly) {
         for (const auto& file : args.sources) {
-            writeFileData(os, args.root, file, args.chunk);
+            writeFileData(os, args.root, file, args);
         }
     } else {
         for (const auto& file : args.sources) {
@@ -157,8 +160,8 @@ void writeDataSection(std::ostream& os, const GeneratorArgs& args) {
     os << "}\n";
 }
 
-void writeManager(std::ostream& os, const GeneratorArgs& args) {
-    os << "inline std::string_view find_resource(std::string_view path) {\n"
+void writeManagerImpl(std::ostream& os, const GeneratorArgs& args) {
+    os << " {\n"
        << "  using Fn = std::string_view (*)();\n"
        << "  static auto pathTable = []() {\n"
        << "    return std::map<std::string, Fn, std::less<>>{\n";
@@ -182,6 +185,18 @@ void writeManager(std::ostream& os, const GeneratorArgs& args) {
        << "}\n";
 }
 
+void writeManager(std::ostream& os, const GeneratorArgs& args) {
+    if (args.headerOnly) {
+        os << "inline ";
+    }
+    os << "std::string_view find_resource(std::string_view path)";
+    if (args.headerOnly) {
+        writeManagerImpl(os, args);
+    } else {
+        os << ";\n";
+    }
+}
+
 void writeImpls(std::string_view header, const fs::path& projectRoot, const GeneratorArgs& args) {
     std::for_each(std::execution::par_unseq, args.sources.begin(), args.sources.end(), [&](const std::string& file) {
         fs::path outPath = projectRoot / (file + ".cpp");
@@ -195,9 +210,25 @@ void writeImpls(std::string_view header, const fs::path& projectRoot, const Gene
             out << args.nspace << "::";
         }
         out << "resources_detail {\n";
-        writeFileData(out, args.root, file, args.chunk);
+        writeFileData(out, args.root, file, args);
         out << "}\n";
     });
+
+    {
+        fs::path outPath = projectRoot / header;
+        outPath.replace_extension(".cpp");
+        std::ofstream out(outPath);
+        out << "#include \"" << header << "\"\n\n"
+            << "#include <string>\n\n";
+        if (!args.nspace.empty()) {
+            out << "namespace " << args.nspace << " {\n";
+        }
+        out << "std::string_view find_resource(std::string_view path)";
+        writeManagerImpl(out, args);
+        if (!args.nspace.empty()) {
+            out << "}\n";
+        }
+    }
 }
 
 }  // namespace
