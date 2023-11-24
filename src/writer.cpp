@@ -185,7 +185,7 @@ void writeManager(std::ostream& os, const GeneratorArgs& args) {
 void writeImpls(std::string_view header, const fs::path& projectRoot, const GeneratorArgs& args) {
     std::for_each(std::execution::par_unseq, args.sources.begin(), args.sources.end(), [&](const std::string& file) {
         fs::path outPath = projectRoot / (file + ".cpp");
-        fs::create_directories(outPath);
+        fs::create_directories(outPath.parent_path());
         std::ofstream out(outPath);
 
         out << "#include \"" << header << "\"\n\n"

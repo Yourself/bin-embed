@@ -60,25 +60,23 @@ template <class T>
 using GeneratorField = T GeneratorArgs::*;
 
 template <GeneratorField<bool> M>
-ParseFn makeBooleanFlagParser() {
-    return [](const char* arg, GeneratorArgs& args) {
-        if (arg) {
-            if (std::regex_match(arg, trueRegex)) {
-                args.*M = true;
-            } else if (std::regex_match(arg, falseRegex)) {
-                args.*M = false;
-            } else {
-                return false;
-            }
-        } else {
+ParseResult parseBooleanFlag(const char* arg, GeneratorArgs& args) {
+    if (arg) {
+        if (std::regex_match(arg, trueRegex)) {
             args.*M = true;
+        } else if (std::regex_match(arg, falseRegex)) {
+            args.*M = false;
+        } else {
+            return false;
         }
-        return true;
-    };
+    } else {
+        args.*M = true;
+    }
+    return true;
 }
 
-const auto parseUsePragma = makeBooleanFlagParser<&GeneratorArgs::usePragma>();
-const auto parseHeaderOnly = makeBooleanFlagParser<&GeneratorArgs::headerOnly>();
+const auto parseUsePragma = &parseBooleanFlag<&GeneratorArgs::usePragma>;
+const auto parseHeaderOnly = &parseBooleanFlag<&GeneratorArgs::headerOnly>;
 
 void parsePositional(const char* arg, GeneratorArgs& args) {
     args.sources.emplace_back(arg);
