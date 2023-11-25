@@ -195,6 +195,7 @@ void writeManager(std::ostream& os, const GeneratorArgs& args) {
 
 void writeImpls(std::ostream& os, std::string_view header, const GeneratorArgs& args) {
     os << "#include \"" << header << "\"\n\n"
+       << "#include <map>\n"
        << "#include <string>\n\n";
     writeDataSection(os, args);
     if (!args.nspace.empty()) {

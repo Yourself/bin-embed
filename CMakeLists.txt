@@ -54,7 +54,7 @@ function(add_resources target)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMENT "Generating ${EMBED_GENERATED_HEADER_REL} ${EMBED_GENERATED_CPP_REL}")
 
-    add_custom_target(EMBED_${target} DEPENDS "${EMBED_GENERATED_HEADER}")
+    add_custom_target(EMBED_${target} DEPENDS "${EMBED_GENERATED_HEADER}" "${EMBED_GENERATED_CPP}")
 
     if(${EMBED_RES_HEADER_ONLY})
         add_library(${target} INTERFACE)
