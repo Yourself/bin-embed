@@ -29,11 +29,13 @@ void writePreamble(std::ostream& os, const GeneratorArgs& args) {
     } else {
         os << "#ifndef " << IncludeGuardName << '\n' << "#define " << IncludeGuardName << '\n';
     }
-    os << '\n'
-       << "#include <cstdint>\n"
-       << "#include <map>\n"
-       << (args.headerOnly ? "#include <string>\n" : "") << "#include <string_view>\n"
-       << '\n';
+    os << '\n';
+    if (args.headerOnly) {
+        os << "#include <cstdint>\n"
+           << "#include <map>\n"
+           << "#include <string>\n";
+    }
+    os << "#include <string_view>\n\n";
 }
 
 void writePostamble(std::ostream& os, const GeneratorArgs& args) {
