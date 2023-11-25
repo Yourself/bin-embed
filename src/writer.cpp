@@ -147,15 +147,9 @@ void writeFileData(std::ostream& os, const std::string& root, const std::string&
 }
 
 void writeDataSection(std::ostream& os, const GeneratorArgs& args) {
-    os << "namespace resources_detail {\n";
-    if (args.headerOnly) {
-        for (const auto& file : args.sources) {
-            writeFileData(os, args.root, file, args);
-        }
-    } else {
-        for (const auto& file : args.sources) {
-            writeGetFunction(os, file) << ";\n";
-        }
+    os << "namespace " << (args.headerOnly ? "resources_detail" : "") << " {\n";
+    for (const auto& file : args.sources) {
+        writeFileData(os, args.root, file, args);
     }
     os << "}\n";
 }
@@ -173,7 +167,7 @@ void writeManagerImpl(std::ostream& os, const GeneratorArgs& args) {
         first = false;
         os << "      {";
         writeStringLiteral(os, file);
-        os << ", &resources_detail::get_";
+        os << ", &" << (args.headerOnly ? "resources_detail::" : "") << "get_";
         writeIdentifier(os, file);
         os << "}";
     }
@@ -197,37 +191,17 @@ void writeManager(std::ostream& os, const GeneratorArgs& args) {
     }
 }
 
-void writeImpls(std::string_view header, const fs::path& projectRoot, const GeneratorArgs& args) {
-    std::for_each(std::execution::par_unseq, args.sources.begin(), args.sources.end(), [&](const std::string& file) {
-        fs::path outPath = projectRoot / (file + ".cpp");
-        fs::create_directories(outPath.parent_path());
-        std::ofstream out(outPath);
-
-        out << "#include \"" << header << "\"\n\n"
-            << "#include <string>\n\n"
-            << "namespace ";
-        if (!args.nspace.empty()) {
-            out << args.nspace << "::";
-        }
-        out << "resources_detail {\n";
-        writeFileData(out, args.root, file, args);
-        out << "}\n";
-    });
-
-    {
-        fs::path outPath = projectRoot / header;
-        outPath.replace_extension(".cpp");
-        std::ofstream out(outPath);
-        out << "#include \"" << header << "\"\n\n"
-            << "#include <string>\n\n";
-        if (!args.nspace.empty()) {
-            out << "namespace " << args.nspace << " {\n";
-        }
-        out << "std::string_view find_resource(std::string_view path)";
-        writeManagerImpl(out, args);
-        if (!args.nspace.empty()) {
-            out << "}\n";
-        }
+void writeImpls(std::ostream& os, std::string_view header, const GeneratorArgs& args) {
+    os << "#include \"" << header << "\"\n\n"
+       << "#include <string>\n\n";
+    writeDataSection(os, args);
+    if (!args.nspace.empty()) {
+        os << "namespace " << args.nspace << " {\n";
+    }
+    os << "std::string_view find_resource(std::string_view path)";
+    writeManagerImpl(os, args);
+    if (!args.nspace.empty()) {
+        os << "}\n";
     }
 }
 
@@ -235,15 +209,17 @@ void writeImpls(std::string_view header, const fs::path& projectRoot, const Gene
 
 void writeHeader(std::ostream& os, const GeneratorArgs& args) {
     writePreamble(os, args);
-    writeDataSection(os, args);
+    if (args.headerOnly) {
+        writeDataSection(os, args);
+    }
     writeManager(os, args);
     writePostamble(os, args);
 
     if (!args.headerOnly) {
         fs::path headerPath(args.output);
         std::string header = headerPath.filename().string();
-        fs::path projectRoot = headerPath.parent_path();
+        std::ofstream out(headerPath.replace_extension(".cpp"));
 
-        writeImpls(header, projectRoot, args);
+        writeImpls(out, header, args);
     }
 }
